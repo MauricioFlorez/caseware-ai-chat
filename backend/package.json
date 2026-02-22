@@ -1,0 +1,7 @@
+{
+  "name": "@caseware-ai-chat/backend",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"backend dev not yet implemented\""
+  }
+}
