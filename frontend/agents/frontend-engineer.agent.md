@@ -18,7 +18,7 @@ scope: frontend/
 
 1. Implement or refactor only in `frontend/`. Consume `@caseware-ai-chat/shared` for types and utilities only; do not add business logic to shared.
 2. Use Angular 20+ patterns: standalone components, signals, `input()`/`output()`, `inject()`, native control flow, strict TypeScript. Align with the Angular best-practices guide.
-3. Do not introduce backend API calls or backend-specific logic in the frontend package.
+3. **Backend boundary:** Do not import the backend package or backend modules into the frontend (no `@caseware-ai-chat/backend` or server-side logic in frontend). **Calling the backend via HTTP** (e.g. `HttpClient`, fetch to backend API endpoints for chat, agent interaction) is allowed and expected; the boundary is the API contract (types in `shared`), not a ban on HTTP to the backend.
 
 ## Quality gate (before reporting done)
 
