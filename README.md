@@ -52,8 +52,6 @@ Mock mode is a dummy mode that allows you to test the frontend without the backe
 | `DESIGN.md`  | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
 | `VIDEO-DEMO`  | [Caseware ai-chat showcase ](https://www.loom.com/share/35e94b4379a743fdb79d7c8b6fc49325) |
 
-### Demo
-
 
 
 ## Frontend agents and MCP
