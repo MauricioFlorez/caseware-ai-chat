@@ -1,6 +1,6 @@
 # Caseware AI Chat
 
-Chat interface backed by a proxy/orchestrator that talks to an AI agent (e.g. via GitHub CLI). Built for scalability, clear layering, and future extension.
+Chat interface backed by a proxy/orchestrator that talks to an AI agent via GitHub Copilot CLI. Built for scalability, clear layering, and future extension.
 
 ## Repo structure
 
@@ -14,8 +14,10 @@ Monorepo managed with **pnpm workspaces**.
 
 ## Prerequisites
 
-- Node.js (see constitution for version)
-- pnpm 9+
+- Node.js >=20.0.0
+- pnpm >=10.0.0
+- make sure to create /backend .env file with the correct values at least PORT variable. PORT=3000 for example.
+- This project uses Github Copilot CLI as "agent" to answer the user's questions when in live mode. You need to have it installed, authenticated and runing.
 
 ## Setup
 
@@ -26,10 +28,33 @@ pnpm install
 ## Run
 
 ```bash
-pnpm dev
+pnpm run dev
+```
+Runs frontend and backend in parallel.
+
+## Run tests
+
+```bash
+pnpm run test
 ```
 
-Runs frontend and backend in parallel (when implemented).
+## Mock mode
+
+Mock mode is a dummy mode that allows you to test the frontend without the backend. It will use a mocked response from the backend and you can enable it directly in the header dropdown.
+
+
+## Deliverables
+
+
+| Deliverable | Description |
+| --------- | ----------------------------- |
+| `/transcripts/ ` | [Folder](transcripts/) containing raw AI interaction logs |
+| `DESIGN.md`  | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
+| `DEMO.md`  | [Caseware ai-chat showcase ](https://www.loom.com/share/35e94b4379a743fdb79d7c8b6fc49325) |
+
+### Demo
+
+
 
 ## Frontend agents and MCP
 
@@ -44,3 +69,13 @@ Frontend Engineer agent and quality gate require **Angular CLI MCP**; config in 
 ---
 
 _More details (architecture, contracts, contributing) will be added as the project evolves._
+
+
+## How to contribute
+
+I adopted SDD (Specification, Design, Development, Deployment) approach for this project.
+
+The project is using [spec-kit](https://github.com/github/spec-kit/tree/main) for specification and design to standardize the development process.
+
+Check the [spec-kit](https://github.com/github/spec-kit/tree/main) documentation for more details.
+

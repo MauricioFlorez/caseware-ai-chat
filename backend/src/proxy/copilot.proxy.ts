@@ -1,7 +1,7 @@
 /**
  * Copilot proxy: spawn gh copilot with -p "<message>", stream stdout as SSE.
  * stderr or non-zero exit → one error event then done. Client abort → child.kill().
- * Do NOT finish on req.on('close'); only on child exit, child error, stderr, abort, or write failure.
+ * Finish on child exit, child error, stderr, client disconnect (req 'abort' or 'close' with !ended guard), or write failure.
  * Keepalives: : started immediately, : keepalive every 3s until first delta or finish.
  */
 
@@ -95,10 +95,12 @@ export function runCopilotProxy(req: Request, res: Response, message: string): v
     }
   }, KEEPALIVE_INTERVAL_MS);
 
-  // Do NOT finish on req.on('close') — Node can emit close while socket still writable
-  req.on('abort', () => {
-    finish('client abort');
-  });
+  // Client disconnect: req.on('close') fires when the request *body* stream closes (e.g. after express.json() reads it), not only when the client disconnects. Use req.socket.on('close') for actual TCP close (client closed connection or we closed it). Keep req.on('abort') in case Node emits it.
+  function onClientDisconnect(): void {
+    if (!ended) finish('client abort');
+  }
+  req.on('abort', onClientDisconnect);
+  if (req.socket) req.socket.once('close', onClientDisconnect);
 
   child.stdout.on('data', (chunk: Buffer) => {
     clearKeepalive();

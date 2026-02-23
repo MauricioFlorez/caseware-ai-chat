@@ -43,6 +43,17 @@ The system is a chat UI that streams agent responses. The “agent” is **GitHu
 
 ---
 
+### 2.1 SSE VS WebSocket
+
+SSE dominates when the data flows in one direction during a response which is exactly the case for this project. One POST, one stream back, done. The transport matches the problem. 
+The abort controller for cancellation, explicit retry for control, and it works through every proxy and firewall without configuration. This is a great choice for this project.
+
+WebSocket is more suitable when both sides need to talk simultaneously on the same connection. Live collaboration, multiplayer, etc. The persistent bidirectional channel is the feature, not a side effect.
+
+The core tradeoff is complexity vs capability. SSE is HTTP, it means everything that understands HTTP understands SSE. WebSocket is a protocol upgrade, despite adding bidirectionality, the complexity over reconnection logic, state management, and proxy compatibility is a problem to solve.
+
+The trap is reaching for WebSocket because a chat UI looks bidirectional. It isn't the case, the user types, waits, reads. Those are sequential, not simultaneous. The bidirectionality is in the UX, not in the data flow. SSE models the actual flow correctly. This pattern is aligned to mature companies talking to AI agents.
+
 ## 3. Ordering and stderr
 
 - **Content** comes only from **stdout**, in **strict order** (chunk 1, chunk 2, …).
@@ -87,8 +98,12 @@ Each SSE event carries **one JSON object** in the `data` field. The client parse
 
 - **POST** to the proxy (e.g. `POST /api/chat` or `POST /chat`) with body e.g. `{ "message": "<user message>" }`.
 - **Response**: `Content-Type: text/event-stream`; body is SSE stream (delta/done/error as above).
-- **Stream lifetime**: The proxy MUST NOT end the stream solely on `req.on('close')` (Node/Express can emit `close` while the connection is still writable). It MUST only end on: child exit, child error, stderr received, client abort, or write failure.
-- **Cancel**: When the user hits Stop, the client **aborts the fetch** (or closes the SSE connection). The proxy **kills the child process** (e.g. `child.kill()`). A new turn starts a new request and a new process.
+- **Stream lifetime**: The proxy MUST only end on: child exit, child error, stderr received, client abort (disconnect), or write failure. It MUST NOT end solely because `req.on('close')` fired once (Node can emit close while the socket is still writable in some edge cases); see client-disconnect detection below.
+- **Cancel**: When the user hits Stop, the client **aborts the fetch** (or closes the SSE connection). The proxy **kills the child process** (e.g. `child.kill()`). A new turn starts a new request and a new process. The **frontend** MUST update the last agent message’s status to reflect that the stream was stopped (e.g. “Stopped” or “Cancelled”) so the UI does not keep showing “In Progress”.
+
+### 6.0.1 Client-disconnect detection (Node.js)
+
+When the client aborts the fetch (e.g. Stop button), the browser closes the TCP connection. The proxy MUST detect client disconnect by listening for **`req.on('abort')`** and **`req.socket.on('close')`** (not `req.on('close')`: the request stream's `close` fires when the request body is fully read, e.g. right after Express parses the body, which would kill the stream immediately after Send). In each handler, call the same finish logic only when the stream has not already ended (guard with `if (!ended) finish('client abort')`). Use `req.socket.once('close', ...)` so the socket close (actual TCP disconnect) is what triggers finish when the client aborts.
 
 ### 6.1 Keepalives
 
@@ -104,21 +119,35 @@ To avoid idle timeouts during long time-to-first-token, the proxy sends an **imm
 
 ---
 
-## 8. Summary diagram
+## 8. Sequence diagram
 
-```
-[Angular]  POST /api/chat { message }
-           Accept: text/event-stream
-              ↓
-[Node proxy]  spawn('gh', ['copilot', 'suggest', '--', '-p', '<message>', '--allow-all-tools', '-s'], { stdout, stderr })
-              read stdout → delta (order preserved)
-              optional: : started / : keepalive comments until first delta
-              stderr / non-zero exit → error then done
-              (optional: buffer full stdout → chunk by env config → delta… done)
-              ↓
-[SSE]  : started  (then optional : keepalive)
-       data: {"type":"delta","text":"..."}
-       data: {"type":"done"}  OR  data: {"type":"error","message":"..."}
-              ↓
-[Angular]  ignore comment lines; parse data: as StreamEvent → same UI (delta/done/error)
+```mermaid
+sequenceDiagram
+    participant A as Angular
+    participant P as Node Proxy
+    participant GH as gh copilot
+
+    A->>P: POST /api/chat { message }<br/>Accept: text/event-stream
+
+    P->>GH: spawn('gh', ['copilot', 'suggest',<br/>'--', '-p', message,<br/>'--allow-all-tools', '-s'])
+
+    P-->>A: : started
+    loop until first delta (optional)
+        P-->>A: : keepalive
+    end
+
+    loop stdout chunks (order preserved)
+        GH-->>P: stdout → delta text
+        P-->>A: data: {"type":"delta","text":"..."}
+    end
+
+    alt success
+        GH-->>P: exit 0
+        P-->>A: data: {"type":"done"}
+    else stderr / non-zero exit
+        GH-->>P: stderr or exit ≠ 0
+        P-->>A: data: {"type":"error","message":"..."}
+    end
+
+    Note over A: Ignore comment lines (: ...)<br/>Parse data: lines as StreamEvent<br/>Handle delta / done / error in UI
 ```

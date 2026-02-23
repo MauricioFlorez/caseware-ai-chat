@@ -191,6 +191,17 @@ export class ChatShellComponent implements OnDestroy {
 
   onStopStream(): void {
     this.stream.cancel();
+    // Mark last agent message as cancelled so UI shows "Stopped" instead of "In Progress"
+    this.messages.update((list) => {
+      const copy = [...list];
+      const last = copy[copy.length - 1];
+      if (last?.role === 'agent' && last.streamState === 'in_progress') {
+        copy[copy.length - 1] = { ...last, streamState: 'cancelled' };
+        this.composerRef()?.setStreamEnded();
+        return copy;
+      }
+      return list;
+    });
   }
 
   onRetry(): void {

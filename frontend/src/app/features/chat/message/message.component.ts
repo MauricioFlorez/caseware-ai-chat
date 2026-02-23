@@ -22,6 +22,7 @@ export class MessageComponent {
       in_progress: 'In Progress',
       done: 'Done',
       error: 'Error',
+      cancelled: 'Stopped',
     };
     return labels[state] ?? state;
   }
