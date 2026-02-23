@@ -1,0 +1,25 @@
+<header class="chat-header" role="banner">
+  <span class="chat-header__indicator" [attr.data-mode]="mode()" aria-live="polite">
+    {{ modeLabel[mode()] }}
+  </span>
+  <span class="chat-header__badge" [attr.data-mode]="mode()">{{ mode() }}</span>
+  <div class="chat-header__dropdown">
+    <label for="mock-preset">Mock response</label>
+    <select
+      id="mock-preset"
+      (change)="onPresetChange($any($event.target).value); $any($event.target).value = ''"
+      aria-label="Select mock response"
+    >
+      <option value="">Select…</option>
+      @for (p of presets; track p.id) {
+        <option [value]="p.id">{{ p.label }}</option>
+      }
+    </select>
+  </div>
+  @if (globalError()) {
+    <div class="chat-header__banner">
+      <span>{{ globalError() }}</span>
+      <button type="button" (click)="retry.emit()" aria-label="Retry">Retry</button>
+    </div>
+  }
+</header>

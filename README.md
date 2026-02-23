@@ -33,7 +33,13 @@ Runs frontend and backend in parallel (when implemented).
 
 ## Frontend agents and MCP
 
-Frontend Engineer agent and quality gate require **Angular CLI MCP**; config in [.cursor/mcp.json](.cursor/mcp.json). Restart Cursor after changing MCP config. See [frontend/Agents.md](frontend/Agents.md) for frontend agents by role.
+Frontend Engineer agent and quality gate require **Angular CLI MCP**; config in [.cursor/mcp.json](.cursor/mcp.json). See [frontend/Agents.md](frontend/Agents.md) for frontend agents by role.
+
+**Before running `/speckit.plan` or `/speckit.implement` for the chat UI:** Ensure Angular MCP is configured so the plan and implementation can use the quality gate (build, test). Steps:
+
+1. Confirm [.cursor/mcp.json](.cursor/mcp.json) exists and includes the `angular-cli` server with experimental tools `build` and `test`. Cursor does not document a `cwd` option for MCP; the server runs from the project root. When invoking the Angular MCP `build` or `test` tools, run them from the `frontend/` directory (e.g. ensure the active workspace or tool context is `frontend/` once the Angular app exists there), or run `ng build` / `ng test` from `frontend/` in tasks.
+2. **Restart Cursor** after creating or editing `.cursor/mcp.json` so the MCP server is loaded.
+3. The Angular app will be scaffolded in `frontend/` during implementation; after that, quality-gate commands should be executed from `frontend/` (e.g. `cd frontend && ng build`).
 
 ---
 

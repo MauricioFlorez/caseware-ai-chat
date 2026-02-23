@@ -1,0 +1,43 @@
+@use '../../../../styles/variables' as *;
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  min-height: $header-height;
+  flex-wrap: wrap;
+}
+
+.chat-header__dropdown {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+.chat-header__dropdown select {
+  padding: $spacing-xs;
+}
+
+.chat-header__indicator,
+.chat-header__badge {
+  font-size: $font-size-sm;
+}
+
+.chat-header__badge[data-mode='connected'] {
+  color: #2e7d32;
+}
+.chat-header__badge[data-mode='retrying'] {
+  color: #ed6c02;
+}
+.chat-header__badge[data-mode='disconnected'] {
+  color: #c62828;
+}
+
+.chat-header__banner {
+  margin-left: auto;
+  padding: 0 $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: #ffebee;
+  border-radius: 4px;
+}

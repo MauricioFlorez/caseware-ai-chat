@@ -1,0 +1,17 @@
+<div class="message" [attr.data-role]="role()" [attr.data-stream-state]="streamState()">
+  <span class="message__role">{{ role() }}</span>
+  <div
+    class="message__content"
+    [attr.aria-live]="role() === 'agent' ? 'polite' : null"
+    [attr.aria-atomic]="role() === 'agent'"
+    aria-label="Message content"
+  >{{ content() }}</div>
+  @if (role() === 'agent') {
+    @if (streamState(); as state) {
+      <span class="message__status" [attr.aria-label]="'Stream ' + state">{{ statusLabel(state) }}</span>
+    }
+    @if (errorInfo()) {
+      <span class="message__error">{{ errorInfo() }}</span>
+    }
+  }
+</div>

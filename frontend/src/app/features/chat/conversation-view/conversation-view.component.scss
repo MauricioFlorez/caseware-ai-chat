@@ -1,0 +1,20 @@
+@use '../../../../styles/variables' as *;
+
+.conversation-view {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  min-height: $conversation-min-height;
+}
+
+.conversation-view__welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: $spacing-lg;
+  font-size: $font-size-lg;
+  color: #555;
+  text-align: center;
+}

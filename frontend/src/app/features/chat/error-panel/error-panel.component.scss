@@ -1,0 +1,19 @@
+@use '../../../../styles/variables' as *;
+
+.error-panel {
+  padding: $spacing-md;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 4px;
+  margin-top: $spacing-sm;
+}
+
+.error-panel__retry {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  cursor: pointer;
+}
+.error-panel__retry:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

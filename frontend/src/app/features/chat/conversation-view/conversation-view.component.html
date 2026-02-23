@@ -1,0 +1,26 @@
+<div
+  #scrollContainer
+  class="conversation-view"
+  role="log"
+  aria-label="Conversation"
+>
+  @if (messages().length === 0) {
+    <p class="conversation-view__welcome" aria-live="polite">I'm here to help you!!</p>
+  }
+  @for (msg of messages(); track msg.id) {
+    <app-message
+      [id]="msg.id"
+      [role]="msg.role"
+      [content]="msg.content"
+      [streamState]="msg.streamState"
+      [errorInfo]="msg.errorInfo"
+    />
+    @if (errorPanel()?.userMessageId === msg.id) {
+      <app-error-panel
+        [message]="errorPanel()!.message"
+        [retryDisabled]="retryDisabled()"
+        (retry)="retry.emit()"
+      />
+    }
+  }
+</div>

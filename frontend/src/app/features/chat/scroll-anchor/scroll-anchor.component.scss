@@ -1,0 +1,20 @@
+@use '../../../../styles/variables' as *;
+
+.scroll-anchor {
+  position: sticky;
+  bottom: $spacing-md;
+  display: flex;
+  justify-content: center;
+  padding: $spacing-sm;
+  z-index: 5;
+}
+
+.scroll-anchor__arrow {
+  padding: $spacing-sm $spacing-md;
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

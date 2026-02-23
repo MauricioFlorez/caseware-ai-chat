@@ -1,0 +1,30 @@
+<div class="composer" (keydown)="onKeydown($event)">
+  <textarea
+    class="composer__textarea"
+    [value]="currentText()"
+    (input)="onInput($any($event.target).value)"
+    placeholder="Type a message..."
+    rows="3"
+    aria-label="Message input"
+  ></textarea>
+  @if (sendStopState() === 'send') {
+    <button
+      type="button"
+      class="composer__btn composer__btn--send"
+      (click)="onSend()"
+      [disabled]="streamActive() || !currentText().trim()"
+      aria-label="Send message"
+    >
+      Send
+    </button>
+  } @else {
+    <button
+      type="button"
+      class="composer__btn composer__btn--stop"
+      (click)="onStop()"
+      aria-label="Stop streaming"
+    >
+      Stop
+    </button>
+  }
+</div>

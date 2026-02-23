@@ -1,0 +1,38 @@
+<div class="chat-shell">
+  <header class="chat-shell__header">
+    <app-chat-header
+      [globalError]="globalError()"
+      (retry)="onRetry()"
+      (mockPresetSelected)="onMockPreset($event)"
+    />
+  </header>
+  <main
+    #mainRef
+    class="chat-shell__conversation"
+    role="main"
+    (scroll)="onMainScroll($event.target)"
+  >
+    <app-conversation-view
+      #conversationView
+      [messages]="messages()"
+      [errorPanel]="errorPanel()"
+      [retryDisabled]="retryDisabled()"
+      [streaming]="connection.activeStream()"
+      [isScrolledUp]="isScrolledUp()"
+      [scrollContainer]="conversationMainRef()"
+      (retry)="onRetry()"
+    />
+  </main>
+  @if (showAnchor()) {
+    <div class="chat-shell__anchor">
+      <app-scroll-anchor (scrollToBottom)="scrollToBottom()" />
+    </div>
+  }
+  <footer class="chat-shell__footer">
+    <app-chat-composer
+      [streamActive]="connection.activeStream()"
+      (sendMessage)="onSendMessage($event)"
+      (stopStream)="onStopStream()"
+    />
+  </footer>
+</div>
