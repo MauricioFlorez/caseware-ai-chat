@@ -3,7 +3,7 @@
 **Feature Branch**: `001-chat-ui-streaming`  
 **Created**: 2026-02-22  
 **Status**: Draft  
-**Input**: User description: "I want to implement the UI/UX for chat interface that will stream responses from a backend agent."
+**Input**: User description: "I want to implement the UI/UX for chat interface that will stream responses from a backend agent." Boost: support real SSE backend integration while keeping the mock data layer. The user interface MUST enable selection of live data mode (real SSE) or mock data.
 
 ## Clarifications
 
@@ -21,6 +21,7 @@
 - Q: Should the stream-subscription behavior (unsubscribe previous when starting a new send) also be stated as a testable Functional Requirement? → A: Yes: add a testable FR in addition to the assumption.
 - Q: How should the conversation panel scroll behave during and after streaming? → A: Auto-scroll (animated) while streaming when the user is at the bottom; on stream completion (Done), animate scroll so the last message is visible; if the user scrolls up during a stream, auto-scroll stops (content keeps updating); if the user scrolls back to bottom, auto-scroll resumes; on message send, animate scroll so the last user message is visible; Stop does not change scroll position.
 - Q: On user send, how should the conversation panel scroll? → A: The viewport scrolls so that the newly sent user message is anchored with its top edge at the top of the scroll area (just below the header). Older messages move up and are clipped by the header (header acts as opaque mask). Scroll is triggered only by user sending (Enter or Send), not by incoming/streaming messages. Instant or short animation (e.g. max 200ms) acceptable.
+- Q: Should the chat support both real SSE backend and mock data, with user-selectable mode? → A: Yes. Keep mock data layer; add real SSE backend integration. The user interface MUST enable the user to select live data mode (real SSE) or mock data.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -121,6 +122,22 @@ As a user or tester, I can trigger a mocked agent response from the header to ex
 
 ---
 
+### User Story 7 - Select live or mock data source (Priority: P2)
+
+As a user or tester, I can choose whether the chat uses the live backend (real SSE) or mock data so I can use the app with or without a real backend.
+
+**Why this priority**: Enables development and demos with mock while supporting production use with real SSE; status awareness (idle, streaming, cancelled, error, disconnected) applies in both modes.
+
+**Independent Test**: Select live mode and send a message (with backend available); select mock mode and send or use mock dropdown; verify stream and failure behavior in both modes.
+
+**Acceptance Scenarios**:
+
+1. **Given** the chat is open, **When** the user looks at the UI, **Then** a control is visible to select the data source: live (real SSE backend) or mock.
+2. **Given** live mode is selected and the backend is available, **When** the user sends a message, **Then** the stream is delivered via real SSE and the UI reflects connection and stream state (idle, streaming, cancelled, error, disconnected) accordingly.
+3. **Given** mock mode is selected, **When** the user sends a message or selects a mock preset from the header, **Then** the conversation uses mock data and the same streaming and status behavior applies.
+
+---
+
 ### Keyboard & input behavior
 
 - **Enter**: Sends the message only if the text area has content (trimmed). If the text area is empty, Enter MUST have no effect.
@@ -137,6 +154,8 @@ As a user or tester, I can trigger a mocked agent response from the header to ex
 - When the connection is lost before any response: the error panel appears below the last user message that was sent. If there are no user messages yet (e.g. connection lost on load), the system SHOULD show an error state in the header or a minimal banner; Retry re-establishes connection for the next send.
 - When the user selects a mocked response while disconnected: the mock dropdown remains available and selecting an option MUST emit the mocked stream anyway (mock does not require a real connection; for development/demo).
 - When the user sends a message: the scroll area scrolls so the new user message is anchored at the top of the scroll area (just below the header). If the user had manually scrolled, this send overrides their scroll position and re-anchors to the new message. Each send re-anchors to that send’s message.
+
+- When the backend or proxy reports a process timeout: treat as an error; the stream MUST end cleanly and the UI MUST show an error state (same as other backend errors).
 
 ### Scroll terminology
 
@@ -172,6 +191,9 @@ The following rules apply to the scrollable area that contains the message list 
 - When the conversation has no messages yet, the conversation view MUST show a centered welcome message: "I'm here to help you!!"
 - **On user send (scroll)**: The panel scrolls so the new user message is anchored at the top of the scroll area (just below the header); the header is opaque and clips content above. Trigger is user send only (Enter or Send).
 - **Streaming and Stop (scroll)**: Auto-scroll during streaming when at bottom; scroll on stream completion so last message visible; manual scroll up stops auto-scroll, scroll to bottom resumes; Stop does not change scroll position.
+- **Data source**: The UI supports two data sources—live (real SSE backend) and mock. The user can select the active source via a visible control (e.g. header or settings). Connection and stream state (idle, streaming, cancelled, error, disconnected) are reflected in both modes.
+- **Process timeout**: A process timeout (backend or proxy) is treated as an error: stream ends cleanly, UI shows error state.
+- **Testing harness**: A lightweight harness MAY be provided to trigger stream completed, cancelled, and errored outcomes without the full chat UI (e.g. for automated or manual testing).
 
 ## Requirements *(mandatory)*
 
@@ -203,6 +225,8 @@ The following rules apply to the scrollable area that contains the message list 
 - **FR-020**: The chat UI MUST be keyboard-operable and screen-reader understandable (e.g. logical focus order, accessible labels for controls, and appropriate handling of live-updating content such as streamed messages). Detailed accessibility implementation is defined in the technical plan.
 - **FR-021**: Conversation state MUST be in-memory only for this feature; it is lost on page refresh or new session. No persistence (e.g. local storage or server) is required.
 - **FR-022**: The UI MUST ensure that stream events from a given send are applied only to the agent message created for that send. At most one active subscription MUST apply stream events to the conversation at a time (e.g. unsubscribe the previous subscription when starting a new send), so that each delta is applied exactly once to the corresponding agent message.
+- **FR-023**: The UI MUST allow the user to select the data source: live (real SSE backend) or mock. The selection control MUST be visible in the user interface (e.g. in the header or a dedicated settings area). In live mode, the UI connects to the real backend and displays connection and stream state (idle, streaming, cancelled, error, disconnected); in mock mode, the same status behavior applies using mock data.
+- **FR-024**: When the backend or proxy reports a process timeout, the system MUST treat it as an error: the stream MUST end cleanly and the UI MUST show an error state (same as for other backend errors).
 
 ### Key Entities
 

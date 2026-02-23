@@ -83,6 +83,7 @@ Favor simplicity and determinism. Avoid overengineering, premature abstraction, 
 
 - **This constitution** is the single source of truth for project principles, stack, standards, boundaries, and workflow.
 - **Agent-specific files** (e.g. Cursor rules, Copilot instructions): must not duplicate this content. They must reference this document (e.g. “Follow the project constitution at `constitution.md`” or equivalent path). This keeps configuration agent-agnostic and avoids duplication ([Spec Kit guidance](https://github.com/github/spec-kit/discussions/1056)).
+- **Architecture**: For system design (Angular ↔ Node proxy ↔ Copilot CLI, SSE contract, streaming), see [docs/architecture/ARCHITECTURE.md](../../docs/architecture/ARCHITECTURE.md).
 
 ---
 

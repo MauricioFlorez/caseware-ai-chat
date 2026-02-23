@@ -14,7 +14,10 @@ import { ConversationViewComponent } from './conversation-view/conversation-view
 import { ChatComposerComponent } from './composer/chat-composer.component';
 import { ScrollAnchorComponent } from './scroll-anchor/scroll-anchor.component';
 import { ConnectionStateService } from '../../core/connection-state.service';
+import { DataSourceService } from '../../core/data-source.service';
 import { MockStreamService } from '../../core/mock-stream.service';
+import { SseStreamService } from '../../core/sse-stream.service';
+import type { StreamSource } from '../../core/stream-source.interface';
 import type { Message } from './message/message.model';
 
 function generateId(): string {
@@ -33,8 +36,15 @@ const NEAR_BOTTOM_THRESHOLD = 20;
 })
 export class ChatShellComponent implements OnDestroy {
   readonly connection = inject(ConnectionStateService);
-  private readonly stream = inject(MockStreamService);
+  private readonly dataSource = inject(DataSourceService);
+  private readonly mockStream = inject(MockStreamService);
+  private readonly sseStream = inject(SseStreamService);
   private readonly composerRef = viewChild(ChatComposerComponent);
+
+  /** Current stream source per FR-023: live (real SSE) or mock. */
+  private get stream(): StreamSource {
+    return this.dataSource.dataSource() === 'live' ? this.sseStream : this.mockStream;
+  }
   private readonly conversationViewRef = viewChild(ConversationViewComponent);
   readonly conversationMainRef = viewChild<ElementRef<HTMLElement>>('mainRef');
 
@@ -183,6 +193,8 @@ export class ChatShellComponent implements OnDestroy {
   onMockPreset(presetId: string): void {
     if (this.connection.activeStream()) return;
     this.unsubscribeStream();
+    // Mock preset always uses mock stream (header dropdown).
+    const streamForPreset = this.mockStream;
     const userMessage: Message = {
       id: generateId(),
       role: 'user',
@@ -197,7 +209,7 @@ export class ChatShellComponent implements OnDestroy {
     this.messages.update((list) => [...list, userMessage, agentMessage]);
     setTimeout(() => this.scrollToBottom(), 0);
 
-    const sub = this.stream.events.subscribe((event) => {
+    const sub = streamForPreset.events.subscribe((event) => {
       this.messages.update((list) => {
         const copy = [...list];
         const last = copy[copy.length - 1];
@@ -232,7 +244,7 @@ export class ChatShellComponent implements OnDestroy {
     const timeout = setTimeout(() => sub.unsubscribe(), 30_000);
     sub.add(() => clearTimeout(timeout));
 
-    this.stream.send('', presetId);
+    streamForPreset.send('', presetId);
   }
 
   ngOnDestroy(): void {

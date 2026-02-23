@@ -5,6 +5,15 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+
+## Changelog
+| Version | Date | Change |
+|---------|------|--------|
+| v1.0 | {{date}} | Initial spec |
+
+<!-- Agent instruction: when modifying this spec, 
+     always add a changelog entry before any other change -->
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

@@ -3,6 +3,18 @@
     {{ modeLabel[mode()] }}
   </span>
   <span class="chat-header__badge" [attr.data-mode]="mode()">{{ mode() }}</span>
+  <div class="chat-header__data-source" role="group" aria-label="Data source">
+    <label for="data-source">Data</label>
+    <select
+      id="data-source"
+      [value]="dataSource()"
+      (change)="onDataSourceChange($any($event.target).value)"
+      aria-label="Select data source (live or mock)"
+    >
+      <option value="live">Live</option>
+      <option value="mock">Mock</option>
+    </select>
+  </div>
   <div class="chat-header__dropdown">
     <label for="mock-preset">Mock response</label>
     <select
