@@ -12,7 +12,7 @@
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story (US1–US6)
+- **[Story]**: Which user story (US1–US7)
 - Include exact file paths in descriptions
 
 ## Path conventions
@@ -84,7 +84,7 @@
 **Independent Test**: Simulate disconnect during stream; verify error panel and Retry; press Retry, verify re-send; verify Retry disables until state change.
 
 - [x] T018 [US3] Add error panel component (below last user message that did not receive response, Retry button) in frontend/src/app/features/chat/error-panel/
-- [x] T019 [US3] Show error panel on stream error or connection disconnect (below last user message); when there are no user messages yet (e.g. connection lost on load), show error state in header or minimal banner with Retry; disable Retry after first click until connection state changes in frontend/src/app/features/chat/
+- [x] T019 [US3] Show error panel on stream error or connection disconnect (below last user message); when there are no user messages yet (e.g. connection lost on load), show error state in header or minimal banner with Retry; disable Retry after first click until connection state changes; treat process timeout (backend/proxy) as error: stream ends cleanly, show error state (FR-024) in frontend/src/app/features/chat/
 - [x] T020 [US3] Wire Retry to re-send last user message (or retry stream) and re-enable Retry when state changes in frontend/src/app/features/chat/
 
 **Checkpoint**: User Story 3 independently testable — error panel and Retry work
@@ -130,6 +130,21 @@
 
 ---
 
+## Phase 8b: User Story 7 – Select live or mock data source (Priority: P2)
+
+**Goal**: User can select data source (live = real SSE backend, mock = existing mock). In live mode, UI connects to real backend and shows connection/stream state; in mock mode, same status behavior with mock data. Selection control visible in UI (e.g. header per plan).
+
+**Independent Test**: Select live mode and send (with backend available); select mock and send or use mock dropdown; verify stream and status in both modes.
+
+- [x] T034 [US7] Add data source selector control (live / mock) in header in frontend/src/app/features/chat/header/
+- [x] T035 [US7] Define real SSE stream source implementing stream source interface (send, cancel, events Observable) in frontend/src/app/core/ (e.g. real-sse-stream.service.ts or sse-stream.service.ts)
+- [x] T036 [US7] Wire shell to selected source: when live, use real SSE client; when mock, use existing mock stream service; single active subscription and cancel semantics unchanged in frontend/src/app/features/chat/chat-shell.component.ts and core/
+- [x] T037 [US7] Ensure connection and stream state (idle, streaming, cancelled, error, disconnected) are reflected in both live and mock modes in frontend/src/app/core/ and chat-shell
+
+**Checkpoint**: User Story 7 independently testable — data source selection works; live and mock both stream and show status
+
+---
+
 ## Phase 9: Polish & Cross-Cutting Concerns
 
 **Purpose**: Accessibility, responsive verification, quality gate
@@ -151,7 +166,8 @@
 - **Phase 1 (Setup)**: No dependencies — start immediately
 - **Phase 2 (Foundational)**: Depends on Phase 1 — blocks all user stories
 - **Phases 3–8 (User stories)**: Depend on Phase 2; can proceed in priority order (US1 → US2 → …) or parallel if staffed
-- **Phase 9 (Polish)**: Depends on Phases 3–8 (or subset chosen for release); includes FR-022 (T031), FR-014a (T032), and FR-016a (T033)
+- **Phase 8b (US7)**: Depends on Phase 2 and Phases 3–6 (header, composer, stream wiring). Can follow Phase 8 (mock dropdown).
+- **Phase 9 (Polish)**: Depends on Phases 3–8 and 8b (or subset chosen for release); includes FR-022 (T031), FR-014a (T032), and FR-016a (T033)
 
 ### User story dependencies
 
@@ -161,6 +177,7 @@
 - **US4 (P2)**: After Phase 2 — composes with US1 (scroll, anchor)
 - **US5 (P2)**: After Phase 2 — refines US1 (message styling, status)
 - **US6 (P3)**: After Phase 2 — composes with US1 (header dropdown, mock)
+- **US7 (P2)**: After Phase 2 — composes with US1 (header, stream source swap)
 
 ### Parallel opportunities
 
@@ -187,7 +204,8 @@
 2. Add US1 → test → MVP
 3. Add US2 → test → composer and Send/Stop
 4. Add US3, US4, US5, US6 → test each
-5. Polish (a11y, responsive, quality gate)
+5. Add US7 (Phase 8b) → data source selection, real SSE → test
+6. Polish (a11y, responsive, quality gate)
 
 ---
 
@@ -200,3 +218,5 @@
 - FR-022 (T031): One logical stream per send; single active subscription; mock cancels previous stream. See STREAM-SEMANTICS-DISCREPANCY.md and plan.md.
 - FR-014a (T032): Centered welcome message when conversation is empty. See spec.md Functional Requirements.
 - FR-016a (T033): Conversation panel scroll behavior—auto-scroll while streaming when at bottom; on send and stream completion animate scroll so last message visible; Stop does not change scroll; manual scroll up stops auto-scroll; scroll to bottom resumes. See spec.md § Conversation panel scroll behavior.
+- FR-023 (T034–T037): User selects live (real SSE) or mock; control in header; same status behavior in both modes. See spec.md FR-023 and User Story 7.
+- FR-024 (T019): Process timeout (backend/proxy) → error; stream ends cleanly; UI shows error state. See spec.md FR-024.

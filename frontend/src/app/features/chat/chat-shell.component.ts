@@ -14,7 +14,10 @@ import { ConversationViewComponent } from './conversation-view/conversation-view
 import { ChatComposerComponent } from './composer/chat-composer.component';
 import { ScrollAnchorComponent } from './scroll-anchor/scroll-anchor.component';
 import { ConnectionStateService } from '../../core/connection-state.service';
+import { DataSourceService } from '../../core/data-source.service';
 import { MockStreamService } from '../../core/mock-stream.service';
+import { SseStreamService } from '../../core/sse-stream.service';
+import type { StreamSource } from '../../core/stream-source.interface';
 import type { Message } from './message/message.model';
 
 function generateId(): string {
@@ -33,8 +36,15 @@ const NEAR_BOTTOM_THRESHOLD = 20;
 })
 export class ChatShellComponent implements OnDestroy {
   readonly connection = inject(ConnectionStateService);
-  private readonly stream = inject(MockStreamService);
+  private readonly dataSource = inject(DataSourceService);
+  private readonly mockStream = inject(MockStreamService);
+  private readonly sseStream = inject(SseStreamService);
   private readonly composerRef = viewChild(ChatComposerComponent);
+
+  /** Current stream source per FR-023: live (real SSE) or mock. */
+  private get stream(): StreamSource {
+    return this.dataSource.dataSource() === 'live' ? this.sseStream : this.mockStream;
+  }
   private readonly conversationViewRef = viewChild(ConversationViewComponent);
   readonly conversationMainRef = viewChild<ElementRef<HTMLElement>>('mainRef');
 
@@ -42,10 +52,16 @@ export class ChatShellComponent implements OnDestroy {
   private streamSubscription: Subscription | null = null;
 
   readonly messages = signal<Message[]>([]);
-  /** Error panel below this user message id; null = no panel or show in header when no messages */
-  readonly errorPanel = signal<{ userMessageId: string; message: string } | null>(null);
+  /** Error panel below this user message id; retryCount 0,1,2 per FR-004/FR-019 (after 2: no Retry button). */
+  readonly errorPanel = signal<{
+    userMessageId: string;
+    message: string;
+    retryCount: number;
+  } | null>(null);
   readonly retryDisabled = signal(false);
   readonly lastSentTextForRetry = signal('');
+  /** Next retryCount when showing error; reset to 0 on new send, incremented on each Retry click that then fails. */
+  private readonly retryCountForNextError = signal(0);
   readonly globalError = signal<string | null>(null);
   readonly isScrolledUp = signal(false);
 
@@ -91,13 +107,14 @@ export class ChatShellComponent implements OnDestroy {
     main.scrollTop += msgRect.top - mainRect.top;
   }
 
-  onSendMessage(text: string): void {
+  onSendMessage(text: string, isRetry = false): void {
     if (this.connection.activeStream()) return;
     const trimmed = text.trim();
     if (!trimmed) return;
 
     this.unsubscribeStream();
     this.lastSentTextForRetry.set(trimmed);
+    if (!isRetry) this.retryCountForNextError.set(0);
     this.errorPanel.set(null);
     this.globalError.set(null);
 
@@ -140,7 +157,11 @@ export class ChatShellComponent implements OnDestroy {
             };
             const userMsg = copy[copy.length - 2];
             if (userMsg?.role === 'user') {
-              this.errorPanel.set({ userMessageId: userMsg.id, message: event.message });
+              this.errorPanel.set({
+                userMessageId: userMsg.id,
+                message: event.message,
+                retryCount: this.retryCountForNextError(),
+              });
             }
             this.retryDisabled.set(false);
             this.composerRef()?.setStreamEnded();
@@ -174,15 +195,19 @@ export class ChatShellComponent implements OnDestroy {
 
   onRetry(): void {
     if (this.retryDisabled()) return;
+    const panel = this.errorPanel();
+    this.retryCountForNextError.set((panel?.retryCount ?? 0) + 1);
     this.retryDisabled.set(true);
     this.errorPanel.set(null);
     const text = this.lastSentTextForRetry();
-    if (text) this.onSendMessage(text);
+    if (text) this.onSendMessage(text, true);
   }
 
   onMockPreset(presetId: string): void {
     if (this.connection.activeStream()) return;
     this.unsubscribeStream();
+    // Mock preset always uses mock stream (header dropdown).
+    const streamForPreset = this.mockStream;
     const userMessage: Message = {
       id: generateId(),
       role: 'user',
@@ -197,7 +222,7 @@ export class ChatShellComponent implements OnDestroy {
     this.messages.update((list) => [...list, userMessage, agentMessage]);
     setTimeout(() => this.scrollToBottom(), 0);
 
-    const sub = this.stream.events.subscribe((event) => {
+    const sub = streamForPreset.events.subscribe((event) => {
       this.messages.update((list) => {
         const copy = [...list];
         const last = copy[copy.length - 1];
@@ -232,7 +257,7 @@ export class ChatShellComponent implements OnDestroy {
     const timeout = setTimeout(() => sub.unsubscribe(), 30_000);
     sub.add(() => clearTimeout(timeout));
 
-    this.stream.send('', presetId);
+    streamForPreset.send('', presetId);
   }
 
   ngOnDestroy(): void {

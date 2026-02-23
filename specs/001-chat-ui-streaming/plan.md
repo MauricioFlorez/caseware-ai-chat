@@ -6,7 +6,7 @@
 
 ## Summary
 
-Chat UI that displays connection status, streamed conversation (user and agent messages), sticky header and footer (composer with Send/Stop), error panel with Retry, scroll anchor, and welcome message. Data is mocked in the frontend; no backend. Angular 20+, TypeScript strict, mobile-first. **Stream semantics (FR-022)**: one logical stream per send; UI unsubscribes previous subscription when starting a new send; mock cancels previous stream so each delta is applied exactly once to the corresponding agent message.
+Chat UI that displays connection status, streamed conversation (user and agent messages), sticky header and footer (composer with Send/Stop), error panel with Retry, scroll anchor, and welcome message. **Data source selectable**: user can choose live (real SSE backend) or mock. Real SSE integration connects to the backend for production use; mock remains for development/demo. Angular 20+, TypeScript strict, mobile-first. **Stream semantics (FR-022)**: one logical stream per send; UI unsubscribes previous subscription when starting a new send; mock cancels previous stream so each delta is applied exactly once to the corresponding agent message. **Process timeout (FR-024)**: backend/proxy timeout is treated as error; stream ends cleanly, UI shows error state.
 
 ## Technical Context
 
@@ -15,9 +15,9 @@ Chat UI that displays connection status, streamed conversation (user and agent m
 **Storage**: N/A (in-memory only per spec)  
 **Testing**: Angular default (Jasmine/Karma); quality gate: `ng build` + `ng test` from `frontend/`  
 **Target Platform**: Web browsers; mobile-first responsive  
-**Project Type**: Web application (frontend only for this feature)  
+**Project Type**: Web application; frontend implements chat UI and SSE client; backend (proxy) may be same repo or external.  
 **Performance Goals**: Smooth streaming UX (incremental render); responsive layout; no jank on scroll/anchor  
-**Constraints**: No real backend; mocked stream only; at most one active stream; single active subscription applies events (FR-022)  
+**Constraints**: At most one active stream; single active subscription applies events (FR-022). Real SSE backend optional (user can select live or mock via FR-023). Process timeout treated as error (FR-024).  
 **Scale/Scope**: Single-user chat UI; one conversation in memory
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Chat UI that displays connection status, streamed conversation (user and agent m
 | Check | Status |
 |-------|--------|
 | Frontend uses Angular 20+ | Pass |
-| Frontend depends only on `shared` (types/utils) | Pass — no backend package; mock in frontend |
+| Frontend depends only on `shared` (types/utils) | Pass — frontend consumes shared types; real SSE is HTTP/EventSource client to backend URL |
 | TypeScript strict, no unwarranted `any` | Pass |
 | Prettier/ESLint at root, packages inherit | Pass — assumed |
 | No business logic in shared | Pass — shared holds stream event types only |
@@ -58,7 +58,7 @@ This feature touches only the **frontend** package.
 frontend/
 ├── src/
 │   ├── app/
-│   │   ├── core/           # Connection state, stream source interface, mock stream service
+│   │   ├── core/           # Connection state, stream source interface, mock + real SSE stream services
 │   │   ├── features/chat/  # Shell, header, conversation, message, composer, error-panel, scroll-anchor
 │   │   └── shared/         # UI primitives (if any)
 │   ├── assets/
@@ -72,7 +72,9 @@ shared/
     └── types/             # Stream event types (delta, done, error)
 ```
 
-**Structure decision**: Frontend-only. Core holds connection state and mock stream (with stream-timeout cancellation on new send). Chat shell unsubscribes previous stream subscription when starting a new send (FR-022).
+**Structure decision**: Frontend-only. Core holds connection state, mock stream (with stream-timeout cancellation on new send), and real SSE stream source when live mode is selected. Chat shell unsubscribes previous stream subscription when starting a new send (FR-022).
+
+**Data source selector (FR-023)**: The live/mock control SHALL be placed in the header next to the connection badge and mock dropdown so all mode/connection controls are in one place. (If the team later adds a settings panel, the control MAY move there; spec allows "e.g. header or settings".)
 
 ## Complexity Tracking
 

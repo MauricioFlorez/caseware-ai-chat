@@ -3,4 +3,4 @@ export type {
   StreamEventDelta,
   StreamEventDone,
   StreamEventError,
-} from './types/stream-events';
+} from './types/stream-events.js';

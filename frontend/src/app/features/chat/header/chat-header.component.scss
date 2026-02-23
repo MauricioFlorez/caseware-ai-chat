@@ -8,11 +8,13 @@
   flex-wrap: wrap;
 }
 
+.chat-header__data-source,
 .chat-header__dropdown {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
 }
+.chat-header__data-source select,
 .chat-header__dropdown select {
   padding: $spacing-xs;
 }
