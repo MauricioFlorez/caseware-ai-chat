@@ -129,6 +129,11 @@ export class SseStreamService implements StreamSource {
             const event = JSON.parse(json) as StreamEvent;
             if (event.type === 'delta' || event.type === 'done' || event.type === 'error') {
               this.eventsSubject.next(event);
+              if (event.type === 'done' || event.type === 'error') {
+                this.connectionState.setActiveStream(false);
+                if (event.type === 'error') this.connectionState.setMode('disconnected');
+                return;
+              }
             }
           } catch {
             // skip
