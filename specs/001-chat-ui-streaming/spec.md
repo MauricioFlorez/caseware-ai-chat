@@ -10,6 +10,7 @@
 |---------|------|--------|
 | v1.1 | 2026-02-23 | FR-026 and edge case: Stop/unsubscribe must cancel the stream used for the current turn, not the current data-source selection, to avoid orphaned SSE/backend resources when switching data source mid-stream. |
 | v1.2 | 2026-02-23 | Edge case: data-source dropdown is disabled while streaming so the user cannot change source mid-stream; Stop always cancels the correct stream. |
+| v1.3 | 2026-02-23 | UX on cancel: when the user triggers Stop, the last agent message status MUST show Stopped (or equivalent) so the turn is not shown as still in progress. |
 
 ## Clarifications
 
@@ -106,13 +107,14 @@ As a user, I can clearly tell which messages are mine and which are the agent’
 
 **Why this priority**: Reduces confusion and sets expectations during streaming.
 
-**Independent Test**: Can be fully tested by sending messages and observing role differentiation and streaming state (in progress / done / error).
+**Independent Test**: Can be fully tested by sending messages and observing role differentiation and streaming state (in progress / done / error / stopped).
 
 **Acceptance Scenarios**:
 
 1. **Given** the conversation view, **When** messages are displayed, **Then** user and agent messages are clearly differentiated by role (e.g. layout or position).
 2. **Given** agent messages, **When** they are rendered, **Then** they are not inside a colored or boxed container (per design preference).
-3. **Given** the agent is responding, **When** stream events are being processed, **Then** a live status reflects: In Progress (e.g. loader while rendering), Done, or Error.
+3. **Given** the agent is responding, **When** stream events are being processed, **Then** a live status reflects: In Progress (e.g. loader while rendering), Done, Error, or Stopped (when the user has cancelled via Stop).
+4. **Given** the user has triggered Stop during a stream, **When** the stream is cancelled, **Then** the last agent message’s status reflects Stopped (or equivalent) so the user sees the turn was stopped, not still in progress.
 
 ---
 
@@ -158,7 +160,7 @@ As a user or tester, I can choose whether the chat uses the live backend (real S
 
 - When the user sends a message while already streaming: Send is disabled (or no-op) while a stream is in progress; the user must press Stop or wait until the stream is Done before sending again. Composer stays editable.
 - When the user scrolls up during an active stream: auto-scroll MUST stop immediately (see Conversation panel scroll behavior). Streamed content continues to append to the agent message; the view remains at the user’s scroll position. When the user scrolls back to the bottom (or near it), auto-scroll MUST resume. The conversation view MUST remain scrollable and stable (no crash or scroll jump).
-- When the user cancels the stream via the Stop button: the conversation panel scroll position MUST NOT change; only the composer state (restore last message, button back to Send) and stream cancellation apply.
+- When the user cancels the stream via the Stop button: the conversation panel scroll position MUST NOT change; the composer state (restore last message, button back to Send) and stream cancellation apply; and the last agent message’s status MUST show Stopped (or equivalent) so the UI does not keep showing In Progress.
 - When the user switches the data source (live/mock) mid-stream and then triggers Stop: the system MUST cancel the stream that was used for the current turn (the one that started the in-flight request), not the stream for the currently selected data source, so that no SSE fetch or backend process is left running as an orphaned resource.
 - When a stream is in progress: the data-source dropdown (live/mock) MUST be disabled so the user cannot change the source mid-stream; Stop then always cancels the correct stream and no orphaned fetch or backend process can occur.
 - When Retry is pressed repeatedly: the Retry control is disabled after the first click until the connection state changes (e.g. connected or still disconnected/error); then it is re-enabled so the user can retry again if needed. The user-initiated Retry action is limited to 2 interactions: the first failure shows the error and a Retry button; after the first Retry click, if the request fails again, the error and Retry are shown again; after the second Retry click, if the request fails again, the panel shows "Oops! We hit a snag. Give it a moment, refresh and try again." (or equivalent) and the Retry button is no longer shown. The user can send a new message later to try again.
