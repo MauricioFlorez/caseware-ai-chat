@@ -1,0 +1,57 @@
+@use '../../../../styles/variables' as *;
+
+.message {
+  padding: $spacing-sm $spacing-md;
+}
+
+// User: right-aligned, distinct block
+.message[data-role='user'] {
+  text-align: right;
+}
+.message[data-role='user'] .message__content {
+  display: inline-block;
+  max-width: 85%;
+  padding: $spacing-sm $spacing-md;
+  background: #e3f2fd;
+  border-radius: 8px;
+}
+
+// Agent: left-aligned, no colored/boxed container (per spec)
+.message[data-role='agent'] {
+  text-align: left;
+}
+.message[data-role='agent'] .message__content {
+  display: inline-block;
+  max-width: 85%;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.message__role {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  margin-bottom: $spacing-xs;
+  color: #555;
+}
+
+.message__status {
+  display: block;
+  font-size: $font-size-sm;
+  color: #666;
+  margin-top: $spacing-xs;
+}
+.message__status::before {
+  content: 'Status: ';
+}
+.message[data-stream-state='in_progress'] .message__status { color: #1976d2; }
+.message[data-stream-state='done'] .message__status { color: #2e7d32; }
+.message[data-stream-state='error'] .message__status { color: #c62828; }
+
+.message__error {
+  display: block;
+  font-size: $font-size-sm;
+  color: #c62828;
+  margin-top: $spacing-xs;
+}

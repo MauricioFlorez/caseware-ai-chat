@@ -1,0 +1,65 @@
+@use '../../../styles/variables' as *;
+
+.chat-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.chat-shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: $header-height;
+  padding: 0 $spacing-md;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.chat-shell__conversation {
+  flex: 1;
+  min-height: 0; /* allow flex child to shrink so overflow scrolls */
+  overflow-y: auto;
+  padding: $spacing-md;
+}
+
+/* FR-016: anchor on top of the footer, floating in front of all content */
+.chat-shell__anchor {
+  position: fixed;
+  bottom: $footer-composer-height;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: $spacing-sm;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.chat-shell__anchor app-scroll-anchor {
+  pointer-events: auto;
+}
+
+.chat-shell__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  min-height: $footer-composer-height;
+  padding: $spacing-sm $spacing-md;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.chat-shell__footer-composer {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+.chat-shell__footer-composer input {
+  flex: 1;
+  padding: $spacing-sm;
+}
