@@ -21,6 +21,8 @@ export class ChatHeaderComponent {
   readonly dataSourceService = inject(DataSourceService);
 
   readonly mode = this.connection.mode;
+  /** Disable data-source dropdown while streaming so Stop always cancels the correct stream. */
+  readonly streaming = this.connection.activeStream;
   readonly dataSource = this.dataSourceService.dataSource;
   readonly globalError = input<string | null>(null);
   readonly retry = output<void>();

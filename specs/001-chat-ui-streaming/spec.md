@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "I want to implement the UI/UX for chat interface that will stream responses from a backend agent." Boost: support real SSE backend integration while keeping the mock data layer. The user interface MUST enable selection of live data mode (real SSE) or mock data.
 
+## Changelog
+| Version | Date | Change |
+|---------|------|--------|
+| v1.1 | 2026-02-23 | FR-026 and edge case: Stop/unsubscribe must cancel the stream used for the current turn, not the current data-source selection, to avoid orphaned SSE/backend resources when switching data source mid-stream. |
+| v1.2 | 2026-02-23 | Edge case: data-source dropdown is disabled while streaming so the user cannot change source mid-stream; Stop always cancels the correct stream. |
+
 ## Clarifications
 
 ### Session 2026-02-22
@@ -153,6 +159,8 @@ As a user or tester, I can choose whether the chat uses the live backend (real S
 - When the user sends a message while already streaming: Send is disabled (or no-op) while a stream is in progress; the user must press Stop or wait until the stream is Done before sending again. Composer stays editable.
 - When the user scrolls up during an active stream: auto-scroll MUST stop immediately (see Conversation panel scroll behavior). Streamed content continues to append to the agent message; the view remains at the user’s scroll position. When the user scrolls back to the bottom (or near it), auto-scroll MUST resume. The conversation view MUST remain scrollable and stable (no crash or scroll jump).
 - When the user cancels the stream via the Stop button: the conversation panel scroll position MUST NOT change; only the composer state (restore last message, button back to Send) and stream cancellation apply.
+- When the user switches the data source (live/mock) mid-stream and then triggers Stop: the system MUST cancel the stream that was used for the current turn (the one that started the in-flight request), not the stream for the currently selected data source, so that no SSE fetch or backend process is left running as an orphaned resource.
+- When a stream is in progress: the data-source dropdown (live/mock) MUST be disabled so the user cannot change the source mid-stream; Stop then always cancels the correct stream and no orphaned fetch or backend process can occur.
 - When Retry is pressed repeatedly: the Retry control is disabled after the first click until the connection state changes (e.g. connected or still disconnected/error); then it is re-enabled so the user can retry again if needed. The user-initiated Retry action is limited to 2 interactions: the first failure shows the error and a Retry button; after the first Retry click, if the request fails again, the error and Retry are shown again; after the second Retry click, if the request fails again, the panel shows "Oops! We hit a snag. Give it a moment, refresh and try again." (or equivalent) and the Retry button is no longer shown. The user can send a new message later to try again.
 - When the connection is lost before any response: the error panel appears below the last user message that was sent. If there are no user messages yet (e.g. connection lost on load), the system SHOULD show an error state in the header or a minimal banner; Retry re-establishes connection for the next send.
 - When the user selects a mocked response while disconnected: the mock dropdown remains available and selecting an option MUST emit the mocked stream anyway (mock does not require a real connection; for development/demo).
@@ -233,6 +241,7 @@ The following rules apply to the scrollable area that contains the message list 
 - **FR-023**: The UI MUST allow the user to select the data source: live (real SSE backend) or mock. The selection control MUST be visible in the user interface (e.g. in the header or a dedicated settings area). In live mode, the UI connects to the real backend and displays connection and stream state (idle, streaming, cancelled, error, disconnected); in mock mode, the same status behavior applies using mock data.
 - **FR-024**: When the backend or proxy reports a process timeout, the system MUST treat it as an error: the stream MUST end cleanly and the UI MUST show an error state (same as for other backend errors).
 - **FR-025**: When a send fails with a retriable error (network failure, 5xx, 503, 429), the system MUST automatically retry the same request up to 2 times (3 attempts in total), with a fixed 2 second delay between attempts. During retries, connection mode MUST remain "retrying" and the error panel MUST NOT be shown. After all retries are exhausted, the system MUST show the error panel and Retry button per FR-004. The system MUST NOT automatically retry on non-retriable errors (4xx except 429, server-sent error, or user cancel). This requirement applies to the live SSE data source only; mock source is unchanged.
+- **FR-026**: When the user triggers Stop (or when a new send unsubscribes the previous stream), the system MUST cancel the stream instance that was used for the current turn, not the stream resolved from the current data-source selection. This ensures that if the user switches the data-source dropdown mid-stream and then presses Stop, the correct (previously active) stream is cancelled and no SSE fetch or backend process is left running as an orphaned resource.
 
 ### Key Entities
 

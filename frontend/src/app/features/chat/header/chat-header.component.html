@@ -5,6 +5,7 @@
     <select
       id="data-source"
       [value]="dataSource()"
+      [disabled]="streaming()"
       (change)="onDataSourceChange($any($event.target).value)"
       aria-label="Select data source (live or mock)"
     >
