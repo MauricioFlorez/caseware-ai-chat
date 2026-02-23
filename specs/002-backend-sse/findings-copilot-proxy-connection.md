@@ -110,20 +110,7 @@ When you edit `spec.md`, add a changelog entry, for example:
 
 ---
 
-## 5. Files modified (reverted for later re-apply)
-
-The following files were changed during debugging and have been **reverted** so you can re-apply the fixes using this doc:
-
-| File | What was reverted |
-|------|--------------------|
-| `backend/package.json` | Dev script back to `"dev": "node --watch dist/index.js"`; removed `concurrently` from devDependencies. |
-| `backend/src/proxy/copilot.proxy.ts` | Back to stdin-based invocation (`--no-cache`, write message to stdin, finish on `req.on('close')`); removed keepalives, timeout disabling, and "do not finish on req.close" behavior. |
-
-**Not reverted**: `specs/002-backend-sse/findings-copilot-proxy-connection.md` (this file).
-
----
-
-## 6. References
+## 5. References
 
 - Implementation: `backend/src/proxy/copilot.proxy.ts`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
@@ -131,5 +118,3 @@ The following files were changed during debugging and have been **reverted** so 
 - Backend agents: `backend/AGENTS.md`
 
 ---
-
-*Section 5 lists the files that were reverted; use sections 2 and 3 to re-apply the changes when ready.*

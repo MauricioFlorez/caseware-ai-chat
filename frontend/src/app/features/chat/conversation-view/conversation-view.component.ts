@@ -25,7 +25,11 @@ const NEAR_BOTTOM_THRESHOLD = 20;
 })
 export class ConversationViewComponent {
   readonly messages = input.required<Message[]>();
-  readonly errorPanel = input<{ userMessageId: string; message: string } | null>(null);
+  readonly errorPanel = input<{
+    userMessageId: string;
+    message: string;
+    retryCount: number;
+  } | null>(null);
   readonly retryDisabled = input<boolean>(false);
   readonly streaming = input<boolean>(false);
   /** When true, user has scrolled up; auto-scroll is paused (FR-016a manual scroll interruption). */

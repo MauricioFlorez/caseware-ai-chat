@@ -7,10 +7,19 @@ import type { StreamSource } from './stream-source.interface';
 /** Base URL for chat API (e.g. '' for same-origin, or backend origin). POST { message } to /api/chat. */
 const DEFAULT_CHAT_API_URL = '/api/chat';
 
+/** FR-025: max 3 retries (4 attempts total), 2s delay between attempts. */
+const MAX_ATTEMPTS = 4;
+const RETRY_DELAY_MS = 2000;
+
+function isRetriableStatus(status: number): boolean {
+  return status >= 500 || status === 429;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SseStreamService implements StreamSource {
   private readonly eventsSubject = new Subject<StreamEvent>();
   private abortController: AbortController | null = null;
+  private retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   readonly events: Observable<StreamEvent> = this.eventsSubject.asObservable();
 
@@ -18,8 +27,12 @@ export class SseStreamService implements StreamSource {
 
   send(message: string, _presetId?: string): void {
     this.cancel();
+    this.doSend(message.trim(), 1);
+  }
+
+  private doSend(message: string, attempt: number): void {
     this.abortController = new AbortController();
-    this.connectionState.setMode('retrying');
+    // FR-001: default badge is "connected"; only show "retrying" during retry delay (in scheduleRetry)
     this.connectionState.setActiveStream(true);
 
     const apiUrl = DEFAULT_CHAT_API_URL;
@@ -29,11 +42,15 @@ export class SseStreamService implements StreamSource {
     fetch(finalUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({ message: message.trim() }),
+      body: JSON.stringify({ message }),
       signal: this.abortController.signal,
     })
       .then((response) => {
         if (!response.ok) {
+          if (attempt < MAX_ATTEMPTS && isRetriableStatus(response.status)) {
+            this.scheduleRetry(message, attempt);
+            return;
+          }
           this.connectionState.setMode('disconnected');
           this.connectionState.setActiveStream(false);
           this.eventsSubject.next({
@@ -46,12 +63,26 @@ export class SseStreamService implements StreamSource {
         return this.readSSEStream(response);
       })
       .catch((err: unknown) => {
+        if ((err as { name?: string })?.name === 'AbortError') return;
+        if (attempt < MAX_ATTEMPTS) {
+          this.scheduleRetry(message, attempt);
+          return;
+        }
         this.connectionState.setMode('disconnected');
         this.connectionState.setActiveStream(false);
-        const message =
+        const msg =
           err instanceof Error ? err.message : typeof err === 'string' ? err : 'Connection failed';
-        this.eventsSubject.next({ type: 'error', message });
+        this.eventsSubject.next({ type: 'error', message: msg });
       });
+  }
+
+  private scheduleRetry(message: string, attempt: number): void {
+    this.connectionState.setMode('retrying');
+    this.connectionState.setActiveStream(false);
+    this.retryTimeoutId = setTimeout(() => {
+      this.retryTimeoutId = null;
+      this.doSend(message, attempt + 1);
+    }, RETRY_DELAY_MS);
   }
 
   private async readSSEStream(response: Response): Promise<void> {
@@ -117,6 +148,10 @@ export class SseStreamService implements StreamSource {
   }
 
   cancel(): void {
+    if (this.retryTimeoutId) {
+      clearTimeout(this.retryTimeoutId);
+      this.retryTimeoutId = null;
+    }
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;

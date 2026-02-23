@@ -18,6 +18,7 @@
     @if (errorPanel()?.userMessageId === msg.id) {
       <app-error-panel
         [message]="errorPanel()!.message"
+        [retryCount]="errorPanel()!.retryCount"
         [retryDisabled]="retryDisabled()"
         (retry)="retry.emit()"
       />

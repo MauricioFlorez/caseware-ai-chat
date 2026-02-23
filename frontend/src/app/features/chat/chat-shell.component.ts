@@ -52,10 +52,16 @@ export class ChatShellComponent implements OnDestroy {
   private streamSubscription: Subscription | null = null;
 
   readonly messages = signal<Message[]>([]);
-  /** Error panel below this user message id; null = no panel or show in header when no messages */
-  readonly errorPanel = signal<{ userMessageId: string; message: string } | null>(null);
+  /** Error panel below this user message id; retryCount 0,1,2 per FR-004/FR-019 (after 2: no Retry button). */
+  readonly errorPanel = signal<{
+    userMessageId: string;
+    message: string;
+    retryCount: number;
+  } | null>(null);
   readonly retryDisabled = signal(false);
   readonly lastSentTextForRetry = signal('');
+  /** Next retryCount when showing error; reset to 0 on new send, incremented on each Retry click that then fails. */
+  private readonly retryCountForNextError = signal(0);
   readonly globalError = signal<string | null>(null);
   readonly isScrolledUp = signal(false);
 
@@ -108,6 +114,7 @@ export class ChatShellComponent implements OnDestroy {
 
     this.unsubscribeStream();
     this.lastSentTextForRetry.set(trimmed);
+    this.retryCountForNextError.set(0);
     this.errorPanel.set(null);
     this.globalError.set(null);
 
@@ -150,7 +157,11 @@ export class ChatShellComponent implements OnDestroy {
             };
             const userMsg = copy[copy.length - 2];
             if (userMsg?.role === 'user') {
-              this.errorPanel.set({ userMessageId: userMsg.id, message: event.message });
+              this.errorPanel.set({
+                userMessageId: userMsg.id,
+                message: event.message,
+                retryCount: this.retryCountForNextError(),
+              });
             }
             this.retryDisabled.set(false);
             this.composerRef()?.setStreamEnded();
@@ -184,6 +195,8 @@ export class ChatShellComponent implements OnDestroy {
 
   onRetry(): void {
     if (this.retryDisabled()) return;
+    const panel = this.errorPanel();
+    this.retryCountForNextError.set((panel?.retryCount ?? 0) + 1);
     this.retryDisabled.set(true);
     this.errorPanel.set(null);
     const text = this.lastSentTextForRetry();

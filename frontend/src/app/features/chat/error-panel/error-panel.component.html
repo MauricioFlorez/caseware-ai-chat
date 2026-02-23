@@ -1,12 +1,14 @@
 <div class="error-panel" role="alert">
-  <p class="error-panel__message">{{ message() }}</p>
-  <button
-    type="button"
-    class="error-panel__retry"
-    (click)="retry.emit()"
-    [disabled]="retryDisabled()"
-    aria-label="Retry"
-  >
-    Retry
-  </button>
+  <p class="error-panel__message">{{ displayMessage() }}</p>
+  @if (showRetryButton()) {
+    <button
+      type="button"
+      class="error-panel__retry"
+      (click)="retry.emit()"
+      [disabled]="retryDisabled()"
+      aria-label="Retry"
+    >
+      Retry
+    </button>
+  }
 </div>

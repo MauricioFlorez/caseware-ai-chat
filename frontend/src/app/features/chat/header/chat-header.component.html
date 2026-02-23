@@ -1,7 +1,4 @@
 <header class="chat-header" role="banner">
-  <span class="chat-header__indicator" [attr.data-mode]="mode()" aria-live="polite">
-    {{ modeLabel[mode()] }}
-  </span>
   <span class="chat-header__badge" [attr.data-mode]="mode()">{{ mode() }}</span>
   <div class="chat-header__data-source" role="group" aria-label="Data source">
     <label for="data-source">Data</label>
