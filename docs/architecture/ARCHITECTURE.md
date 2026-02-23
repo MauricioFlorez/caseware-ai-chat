@@ -43,6 +43,17 @@ The system is a chat UI that streams agent responses. The “agent” is **GitHu
 
 ---
 
+### 2.1 SSE VS WebSocket
+
+SSE dominates when the data flows in one direction during a response which is exactly the case for this project. One POST, one stream back, done. The transport matches the problem. 
+The abort controller for cancellation, explicit retry for control, and it works through every proxy and firewall without configuration. This is a great choice for this project.
+
+WebSocket is more suitable when both sides need to talk simultaneously on the same connection. Live collaboration, multiplayer, etc. The persistent bidirectional channel is the feature, not a side effect.
+
+The core tradeoff is complexity vs capability. SSE is HTTP, it means everything that understands HTTP understands SSE. WebSocket is a protocol upgrade, despite adding bidirectionality, the complexity over reconnection logic, state management, and proxy compatibility is a problem to solve.
+
+The trap is reaching for WebSocket because a chat UI looks bidirectional. It isn't the case, the user types, waits, reads. Those are sequential, not simultaneous. The bidirectionality is in the UX, not in the data flow. SSE models the actual flow correctly. This pattern is aligned to mature companies talking to AI agents.
+
 ## 3. Ordering and stderr
 
 - **Content** comes only from **stdout**, in **strict order** (chunk 1, chunk 2, …).
