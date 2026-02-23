@@ -107,14 +107,14 @@ export class ChatShellComponent implements OnDestroy {
     main.scrollTop += msgRect.top - mainRect.top;
   }
 
-  onSendMessage(text: string): void {
+  onSendMessage(text: string, isRetry = false): void {
     if (this.connection.activeStream()) return;
     const trimmed = text.trim();
     if (!trimmed) return;
 
     this.unsubscribeStream();
     this.lastSentTextForRetry.set(trimmed);
-    this.retryCountForNextError.set(0);
+    if (!isRetry) this.retryCountForNextError.set(0);
     this.errorPanel.set(null);
     this.globalError.set(null);
 
@@ -200,7 +200,7 @@ export class ChatShellComponent implements OnDestroy {
     this.retryDisabled.set(true);
     this.errorPanel.set(null);
     const text = this.lastSentTextForRetry();
-    if (text) this.onSendMessage(text);
+    if (text) this.onSendMessage(text, true);
   }
 
   onMockPreset(presetId: string): void {

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 /** FR-004/FR-019: After 2 user Retry attempts that fail, show this message and hide Retry. */
 export const ERROR_PANEL_MAX_RETRIES = 2;
 export const ERROR_PANEL_MESSAGE_AFTER_MAX_RETRIES =
-  'We are experiencing issues, try in some minutes.';
+  'Oops! We hit a snag. Give it a moment, refresh and try again.';
 
 @Component({
   selector: 'app-error-panel',
